@@ -31,3 +31,6 @@ DerivedData/
 # Local secrets and scratch
 .env
 *.local
+
+# Internal planning docs, never published
+docs/prd.md
