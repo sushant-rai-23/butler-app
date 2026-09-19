@@ -2,7 +2,12 @@ import XCTest
 @testable import DoubleProviders
 
 final class SecurityKeychainStoreTests: XCTestCase {
+    /// Opt-in: touches the developer's login keychain. Run with
+    /// `DOUBLE_KEYCHAIN_TESTS=1 swift test --filter SecurityKeychainStoreTests`.
     func testSetGetDeleteOnTheLoginKeychain() throws {
+        guard ProcessInfo.processInfo.environment["DOUBLE_KEYCHAIN_TESTS"] == "1" else {
+            throw XCTSkip("Set DOUBLE_KEYCHAIN_TESTS=1 to run against the login keychain")
+        }
         let store = SecurityKeychainStore(service: "com.double.app.tests")
         let account = "test-\(UUID().uuidString)"
         do {

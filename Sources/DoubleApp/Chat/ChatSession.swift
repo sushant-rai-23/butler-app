@@ -19,6 +19,7 @@ final class ChatSession {
     private(set) var errorText: String?
     @ObservationIgnored private let loop: any AgentLoop
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private var currentTurn: Task<Void, Never>?
 
     init(loop: any AgentLoop, settings: AppSettings) {
         self.loop = loop
@@ -34,24 +35,38 @@ final class ChatSession {
         isStreaming = true
         errorText = nil
         let model = settings.chatModel
-        Task {
+        // Deltas arrive on the provider's thread; a stream keeps them in order
+        // and hands them to the main actor one at a time.
+        let (deltas, continuation) = AsyncStream<String>.makeStream()
+        let consumer = Task { @MainActor [weak self] in
+            for await delta in deltas { self?.append(delta, to: replyID) }
+        }
+        currentTurn = Task {
             do {
-                _ = try await loop.send(text, model: model, maximumRisk: .medium) { [weak self] delta in
-                    DispatchQueue.main.async {
-                        MainActor.assumeIsolated { self?.append(delta, to: replyID) }
-                    }
+                _ = try await loop.send(text, model: model, maximumRisk: .medium) { delta in
+                    continuation.yield(delta)
                 }
             } catch {
                 errorText = error.localizedDescription
-                if let index = messages.firstIndex(where: { $0.id == replyID }), messages[index].text.isEmpty {
-                    messages.remove(at: index)
-                }
+            }
+            continuation.finish()
+            await consumer.value
+            if let index = messages.firstIndex(where: { $0.id == replyID }), messages[index].text.isEmpty {
+                messages.remove(at: index)
             }
             isStreaming = false
         }
     }
 
+    /// Waits for an in-flight turn. Used by tests.
+    func awaitCurrentTurn() async {
+        await currentTurn?.value
+    }
+
+    /// Ignored while a reply is streaming: resetting the loop mid-turn would
+    /// leave an orphaned assistant turn at the head of the new history.
     func clear() {
+        guard !isStreaming else { return }
         messages.removeAll()
         errorText = nil
         Task { await loop.reset() }

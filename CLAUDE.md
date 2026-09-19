@@ -25,8 +25,8 @@ DoubleProviders, DoubleTools, DoubleWatch      (leaves, no dependencies)
 ```
 
 - `DoubleApp`: SwiftUI + AppKit shell. Status item, floating panel, wiring. The only target that may import SwiftUI or build UI.
-- `DoubleCore`: agent loop, workspace (markdown files), commitments, scheduler, nudge policy. Pure logic, no UI, no network, no framework calls.
-- `DoubleProviders`: `ModelProvider` protocol, `Message`, `ToolCall`, `ToolSpec`, `KeychainStore`. Adapters (Gemini first) live here later, one file each.
+- `DoubleCore`: agent loop, workspace (markdown files), commitments, scheduler, nudge policy. Pure logic, no UI, no network.
+- `DoubleProviders`: `ModelProvider` protocol, `Message`, `ToolCall`, `ToolSpec`, `KeychainStore`. Adapters live here, one folder each (Gemini first).
 - `DoubleTools`: `Tool` protocol with `RiskLevel` (low, medium, high) and `ToolRegistry`. Tools are registered once and gated by risk.
 - `DoubleWatch`: Accessibility and ScreenCaptureKit wrappers behind protocols so Core and tests never touch the real APIs.
 
@@ -38,7 +38,7 @@ Adding an edge to this graph is an architecture decision: record it in `decision
 
 **ToolRegistry.** Tools conform to `Tool` and declare a `RiskLevel`. The registry rejects duplicate names and filters by maximum risk. `DoubleCore` maps `Tool` to `ToolSpec` for the model and dispatches `ToolCall` by name. Adding a tool never touches the loop. Anything that acts inside the user's apps is `high` and is off the table.
 
-**KeychainStore.** Protocol with `get`, `set`, `delete`. Tests inject `InMemoryKeychainStore`. Unsigned `swift run` builds get a new code identity every build, so the real Security-framework store is not exercised in tests, ever.
+**KeychainStore.** Protocol with `get`, `set`, `delete`. Tests inject `InMemoryKeychainStore`. Unsigned `swift run` builds get a new code identity every build, so the real Security-framework store has one opt-in test (`DOUBLE_KEYCHAIN_TESTS=1`) that skips by default, and no other test may touch it.
 
 **Workspace markdown.** Templates in `Sources/DoubleCore/Templates/` are seeded create-only into the user's workspace. Every file has YAML frontmatter (`name`, `description`, `updated`, `aliases`). Lines starting with `_` are comments stripped before injection.
 

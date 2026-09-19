@@ -4,6 +4,21 @@ import Foundation
 
 public enum AgentLoopError: Error, Equatable {
     case tooManyToolRounds(Int)
+    /// The model returned neither text nor tool calls. The turn was rolled
+    /// back so history never holds an empty assistant message, which vendors
+    /// reject on the next request.
+    case emptyReply(FinishReason)
+}
+
+extension AgentLoopError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .tooManyToolRounds(let n): return "The model kept asking for tools after \(n) rounds."
+        case .emptyReply(.contentFiltered): return "The model declined to answer. Content was filtered."
+        case .emptyReply(.maxTokens): return "The model ran out of room before answering. Try a shorter message."
+        case .emptyReply(let reason): return "The model returned nothing (\(reason))."
+        }
+    }
 }
 
 /// One conversation with the model.

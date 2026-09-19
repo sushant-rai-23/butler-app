@@ -32,6 +32,7 @@ public actor DefaultAgentLoop: AgentLoop {
                 let request = ChatRequest(model: model, system: system, messages: history, tools: specs)
                 var text = ""
                 var calls: [ToolCall] = []
+                var finish: FinishReason = .stop
                 for try await event in provider.stream(request) {
                     switch event {
                     case .textDelta(let delta):
@@ -39,10 +40,11 @@ public actor DefaultAgentLoop: AgentLoop {
                         onDelta(delta)
                     case .toolCall(let call):
                         calls.append(call)
-                    case .finished:
-                        break
+                    case .finished(let reason):
+                        finish = reason
                     }
                 }
+                if text.isEmpty, calls.isEmpty { throw AgentLoopError.emptyReply(finish) }
                 history.append(Message(role: .assistant, parts: text.isEmpty ? [] : [.text(text)], toolCalls: calls))
                 if calls.isEmpty { return text }
                 for call in calls {
@@ -52,7 +54,8 @@ public actor DefaultAgentLoop: AgentLoop {
             }
             throw AgentLoopError.tooManyToolRounds(maxToolRounds)
         } catch {
-            history.removeSubrange(checkpoint...)
+            // `reset()` may have run while the stream was suspended; clamp.
+            history.removeSubrange(min(checkpoint, history.count)...)
             throw error
         }
     }

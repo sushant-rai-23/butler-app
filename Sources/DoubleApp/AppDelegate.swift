@@ -28,7 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let model = AppModel(settings: settings, keychain: keychain, workspace: workspace, session: session)
         self.model = model
         if workspace.exists { workspace.startWatching() }
-        workspace.changeHandler = { DispatchQueue.main.async { MainActor.assumeIsolated { model.refreshScreen() } } }
+        workspace.changeHandler = { [weak model] in Task { @MainActor in model?.refreshScreen() } }
 
         let settingsWindow = SettingsWindowController {
             AnyView(SettingsView(settings: settings, keychain: keychain) { id in

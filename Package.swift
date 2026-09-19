@@ -24,8 +24,8 @@ let package = Package(
         .target(name: "DoubleTools"),
         .target(name: "DoubleWatch"),
 
-        .testTarget(name: "DoubleAppTests", dependencies: ["DoubleApp"]),
-        .testTarget(name: "DoubleCoreTests", dependencies: ["DoubleCore"]),
+        .testTarget(name: "DoubleAppTests", dependencies: ["DoubleApp", "DoubleCore", "DoubleProviders"]),
+        .testTarget(name: "DoubleCoreTests", dependencies: ["DoubleCore", "DoubleProviders", "DoubleTools"]),
         .testTarget(name: "DoubleProvidersTests", dependencies: ["DoubleProviders"]),
         .testTarget(name: "DoubleToolsTests", dependencies: ["DoubleTools"]),
         .testTarget(name: "DoubleWatchTests", dependencies: ["DoubleWatch"]),

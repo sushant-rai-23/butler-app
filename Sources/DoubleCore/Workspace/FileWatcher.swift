@@ -18,6 +18,10 @@ final class FileWatcher {
         self.handler = handler
     }
 
+    deinit {
+        sources.forEach { $0.cancel() }
+    }
+
     func start() {
         queue.sync { arm() }
     }

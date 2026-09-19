@@ -1,3 +1,4 @@
+import DoubleProviders
 import XCTest
 @testable import DoubleApp
 
@@ -9,7 +10,7 @@ final class AppSettingsTests: XCTestCase {
 
     func testDefaultsComeFromTheProviderCatalog() {
         let settings = AppSettings(defaults: UserDefaults(suiteName: suite)!)
-        XCTAssertEqual(settings.providerID, "gemini")
+        XCTAssertEqual(settings.providerID, ProviderCatalog.defaultProvider.id)
         XCTAssertFalse(settings.chatModel.isEmpty)
         XCTAssertFalse(settings.useAppKitInputField)
     }

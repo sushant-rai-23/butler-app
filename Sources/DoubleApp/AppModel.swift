@@ -21,6 +21,8 @@ final class AppModel {
     let session: ChatSession
     var screen: RootScreen = .chat
     var onboarding = OnboardingDraft()
+    /// Shown under the onboarding and key screens when a step fails.
+    var lastError: String?
 
     init(settings: AppSettings, keychain: any KeychainStore, workspace: MarkdownWorkspace, session: ChatSession) {
         self.settings = settings
@@ -41,21 +43,31 @@ final class AppModel {
     }
 
     func finishOnboarding() {
-        guard let templates = MarkdownWorkspace.bundledTemplates else { return }
+        guard let templates = MarkdownWorkspace.bundledTemplates else {
+            lastError = "The bundled templates are missing. Rebuild the app."
+            return
+        }
         let a = onboarding.answers.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let answers = OnboardingAnswers(name: a[0], work: a[1], hours: a[2], workApps: a[3], helpsWhenStuck: a[4])
         do {
             try workspace.seed(from: templates)
             try workspace.applyOnboarding(answers)
             workspace.startWatching()
+            lastError = nil
         } catch {
+            lastError = "Could not create \(workspace.rootURL.path): \(error.localizedDescription)"
             return
         }
         refreshScreen()
     }
 
     func saveKey(_ key: String) {
-        try? keychain.set(key.trimmingCharacters(in: .whitespacesAndNewlines), for: settings.providerDescriptor.keychainKey)
+        do {
+            try keychain.set(key.trimmingCharacters(in: .whitespacesAndNewlines), for: settings.providerDescriptor.keychainKey)
+            lastError = nil
+        } catch {
+            lastError = "Could not save the key to the Keychain: \(error)"
+        }
         refreshScreen()
     }
 }

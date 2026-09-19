@@ -11,7 +11,7 @@ struct RootView: View {
         case .onboarding:
             OnboardingView(model: model, onClose: onClose)
         case .keyEntry:
-            KeyEntryView(descriptor: model.settings.providerDescriptor, onSave: model.saveKey, onClose: onClose)
+            KeyEntryView(descriptor: model.settings.providerDescriptor, errorText: model.lastError, onSave: model.saveKey, onClose: onClose)
         case .chat:
             ChatView(session: model.session, settings: model.settings, onOpenSettings: onOpenSettings, onClose: onClose)
         }
@@ -50,6 +50,9 @@ struct OnboardingView: View {
                     .keyboardShortcut(.defaultAction)
                     .disabled(model.onboarding.answers[step].trimmingCharacters(in: .whitespaces).isEmpty)
             }
+            if let error = model.lastError {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
             Spacer()
         }
         .padding(20).padding(.top, 20)
@@ -69,6 +72,7 @@ struct OnboardingView: View {
 
 struct KeyEntryView: View {
     let descriptor: ProviderDescriptor
+    var errorText: String?
     var onSave: (String) -> Void
     var onClose: () -> Void
     @State private var key = ""
@@ -87,6 +91,9 @@ struct KeyEntryView: View {
                 Link("Get a key", destination: descriptor.keyHelpURL)
                 Spacer()
                 Button("Save", action: save).keyboardShortcut(.defaultAction).disabled(key.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let errorText {
+                Text(errorText).font(.caption).foregroundStyle(.red)
             }
             Spacer()
         }

@@ -3,7 +3,7 @@ import DoubleTools
 import XCTest
 @testable import DoubleCore
 
-private struct StubWorkspace: Workspace {
+struct StubWorkspace: Workspace {
     var rootURL = URL(fileURLWithPath: "/tmp/stub")
     func read(_ relativePath: String) throws -> String { "" }
     func write(_ contents: String, to relativePath: String) throws {}
@@ -11,7 +11,7 @@ private struct StubWorkspace: Workspace {
 }
 
 final class DefaultAgentLoopTests: XCTestCase {
-    private func makeLoop(_ provider: ScriptedProvider, tools: [any Tool] = [EchoTool()], maxToolRounds: Int = 8) throws -> DefaultAgentLoop {
+    func makeLoop(_ provider: ScriptedProvider, tools: [any Tool] = [EchoTool()], maxToolRounds: Int = 8) throws -> DefaultAgentLoop {
         let registry = ToolRegistry()
         for tool in tools { try registry.register(tool) }
         return DefaultAgentLoop(provider: provider, tools: registry, workspace: StubWorkspace(), maxToolRounds: maxToolRounds)
@@ -89,4 +89,50 @@ private final class Collector: @unchecked Sendable {
     private var storage: [String] = []
     var values: [String] { lock.withLock { storage } }
     func add(_ value: String) { lock.withLock { storage.append(value) } }
+}
+
+/// Streams nothing for a while, then fails. Lets a test call `reset()` while
+/// `send` is suspended inside the provider stream.
+private final class SlowFailingProvider: ModelProvider, @unchecked Sendable {
+    let id = "slow"
+    func listModels() async throws -> [ModelInfo] { [] }
+    func stream(_ request: ChatRequest) -> AsyncThrowingStream<StreamEvent, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                try? await Task.sleep(for: .milliseconds(150))
+                continuation.finish(throwing: ProviderError.network("offline"))
+            }
+        }
+    }
+}
+
+extension DefaultAgentLoopTests {
+    func testEmptyReplyThrowsAndRollsBack() async throws {
+        let provider = ScriptedProvider([[.finished(.contentFiltered)]])
+        let loop = try makeLoop(provider)
+        do {
+            _ = try await loop.send("hi", model: "m", maximumRisk: .medium) { _ in }
+            XCTFail("expected throw")
+        } catch let error as AgentLoopError {
+            XCTAssertEqual(error, .emptyReply(.contentFiltered))
+        }
+        let history = await loop.history
+        XCTAssertEqual(history, [], "an empty assistant turn must never be stored")
+    }
+
+    func testResetWhileSendIsSuspendedDoesNotTrap() async throws {
+        let registry = ToolRegistry()
+        let loop = DefaultAgentLoop(provider: SlowFailingProvider(), tools: registry, workspace: StubWorkspace())
+        async let sending: String = loop.send("hi", model: "m", maximumRisk: .medium) { _ in }
+        try await Task.sleep(for: .milliseconds(30))
+        await loop.reset()
+        do {
+            _ = try await sending
+            XCTFail("expected throw")
+        } catch let error as ProviderError {
+            XCTAssertEqual(error, .network("offline"))
+        }
+        let history = await loop.history
+        XCTAssertEqual(history, [])
+    }
 }
