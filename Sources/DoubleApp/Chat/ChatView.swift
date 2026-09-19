@@ -9,8 +9,15 @@ struct ChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text("Double").font(.headline)
+                // The model actually used for the next message, read from the
+                // same setting `ChatSession.send` reads.
+                Text(settings.chatModel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .help("Model used for the next message")
                 Spacer()
                 Button { session.clear() } label: { Image(systemName: "trash") }
                     .buttonStyle(.plain).help("Clear this conversation")

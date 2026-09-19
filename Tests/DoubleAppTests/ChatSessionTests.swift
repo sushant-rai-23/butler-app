@@ -85,3 +85,22 @@ final class ChatSessionTests: XCTestCase {
         XCTAssertEqual(loop.resets, 1)
     }
 }
+
+extension ChatSessionTests {
+    /// The model is read at send time, so a Settings change applies to the
+    /// next message with no restart and no new ChatSession.
+    func testModelChangeAppliesToTheNextMessage() async {
+        let loop = ScriptedLoop(deltas: ["ok"])
+        let settings = makeSettings()
+        let session = ChatSession(loop: loop, settings: settings)
+
+        session.send("first")
+        await session.awaitCurrentTurn()
+
+        settings.chatModel = "gemini-3.5-flash-lite"
+        session.send("second")
+        await session.awaitCurrentTurn()
+
+        XCTAssertEqual(loop.models, ["test-model", "gemini-3.5-flash-lite"])
+    }
+}
