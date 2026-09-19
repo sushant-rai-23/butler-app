@@ -8,11 +8,16 @@ public struct ToolCall: Equatable, Codable, Sendable {
     public let id: String
     public let name: String
     public let arguments: String
+    /// Provider-owned state to echo back verbatim with this call on the next
+    /// request (for example a reasoning signature). Core stores it and never
+    /// reads it.
+    public var opaque: String?
 
-    public init(id: String, name: String, arguments: String) {
+    public init(id: String, name: String, arguments: String, opaque: String? = nil) {
         self.id = id
         self.name = name
         self.arguments = arguments
+        self.opaque = opaque
     }
 }
 
