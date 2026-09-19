@@ -62,7 +62,8 @@ Imperative subject, 72 chars max, area prefix: `core:`, `providers:`, `tools:`, 
 - `mattpocock-skills:code-review` or `code-review`: before merging any branch.
 - `superpowers:systematic-debugging`: any failing test or unexpected app behaviour.
 - `frontend-design`: only when shaping the panel or nudge UI, and with macOS HIG in mind.
-- Not installed, recommended: AvdLee/SwiftUI-Agent-Skill (macOS scenes, window styling), AvdLee/Swift-Concurrency-Agent-Skill (actors, Sendable for the scheduler and loop).
+- `swiftui-expert-skill` (AvdLee, installed globally): any SwiftUI view, scene or window work in DoubleApp; read its `references/macos-*.md` first.
+- `swift-concurrency` (AvdLee, installed globally): when touching actors, `Sendable`, `@MainActor`, or the scheduler and agent loop.
 
 ## When stuck, look at
 
