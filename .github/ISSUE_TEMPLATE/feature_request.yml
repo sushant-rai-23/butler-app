@@ -1,0 +1,21 @@
+name: Feature request
+description: Propose a change. Double is a body double with commitment context, not a pet or a general assistant.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What gets in the way of staying on task today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should Double do, and when should it stay quiet?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

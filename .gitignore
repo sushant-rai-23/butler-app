@@ -1,0 +1,33 @@
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Swift / Xcode artifacts
+*.o
+*.dSYM
+*.ipa
+*.app
+*.dmg
+*.hmap
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local secrets and scratch
+.env
+*.local

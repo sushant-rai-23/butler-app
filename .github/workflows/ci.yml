@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    # macos-14 images are deprecated and removed on 2026-11-02; macos-15 ships Xcode 16 (Swift 6 compiler, language mode 5 via tools-version 5.10).
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build -v
+
+      - name: Test
+        run: swift test -v
+

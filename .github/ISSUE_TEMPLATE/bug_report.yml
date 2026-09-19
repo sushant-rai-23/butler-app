@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in Double does not behave as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. swift run DoubleApp
+        2. Click the menu bar icon
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "14.6"
+    validations:
+      required: true
+  - type: input
+    id: swift
+    attributes:
+      label: Output of `swift --version`
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove anything private. Never paste API keys.
