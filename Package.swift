@@ -19,7 +19,7 @@ let package = Package(
             name: "DoubleApp",
             dependencies: ["DoubleCore", "DoubleProviders", "DoubleTools", "DoubleWatch"]
         ),
-        .target(name: "DoubleCore", dependencies: ["DoubleProviders", "DoubleTools"]),
+        .target(name: "DoubleCore", dependencies: ["DoubleProviders", "DoubleTools"], resources: [.copy("Templates")]),
         .target(name: "DoubleProviders"),
         .target(name: "DoubleTools"),
         .target(name: "DoubleWatch"),

@@ -12,4 +12,7 @@ public protocol Workspace: Sendable {
     var rootURL: URL { get }
     func read(_ relativePath: String) throws -> String
     func write(_ contents: String, to relativePath: String) throws
+
+    /// SOUL.md then USER.md, frontmatter removed, comment lines stripped.
+    func systemPrompt() throws -> String
 }

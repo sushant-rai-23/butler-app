@@ -40,7 +40,7 @@ Adding an edge to this graph is an architecture decision: record it in `decision
 
 **KeychainStore.** Protocol with `get`, `set`, `delete`. Tests inject `InMemoryKeychainStore`. Unsigned `swift run` builds get a new code identity every build, so the real Security-framework store is not exercised in tests, ever.
 
-**Workspace markdown.** Templates in `Templates/` are seeded create-only into the user's workspace. Every file has YAML frontmatter (`name`, `description`, `updated`, `aliases`). Lines starting with `_` are comments stripped before injection.
+**Workspace markdown.** Templates in `Sources/DoubleCore/Templates/` are seeded create-only into the user's workspace. Every file has YAML frontmatter (`name`, `description`, `updated`, `aliases`). Lines starting with `_` are comments stripped before injection.
 
 ## Rules
 

@@ -79,3 +79,9 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 - **Options:** FSEvents recursive now; DispatchSource on the root and top-level files; a YAML package.
 - **Why:** DispatchSource covers Phase 1 with no C callback plumbing. The parser handles `key: value` lines and an inline `[a, b]` list, preserves unknown keys as raw strings, and bumps `updated` on write.
 - **Revisit when:** Phase 2 reads projects/ and daily/; switch to FSEvents then.
+
+## 2026-09-20: Templates live in Sources/DoubleCore/Templates
+- **Context:** The app must find the seed templates at runtime from `swift run`. SwiftPM resources must sit inside the target folder; a symlink is copied into the resource bundle as a dangling link.
+- **Options:** Symlink from the target into a root `Templates/`; embed the files as Swift strings; move the folder into the target.
+- **Why:** Moving is the only option SwiftPM handles natively. `Bundle.module` serves them from `Double_DoubleCore.bundle` under `swift run` and inside a real bundle later.
+- **Revisit when:** Never, unless templates gain an editor outside the package.
