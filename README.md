@@ -2,7 +2,16 @@
 
 Double is an open-source macOS body double for people with ADHD. You tell it what you are committing to right now, it quietly watches which app and window is in front, and it nudges you only when you drift, stall, or run out the clock. It is native Swift with no backend and no account. You bring your own model key (Gemini via the free AI Studio tier by default), and everything it remembers about you lives as plain markdown files on your disk that you can read, edit, or delete.
 
-> **Under construction.** Phase 0 is a scaffold: a menu bar icon and an empty panel. Nothing watches anything yet. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for where it is going.
+## First run
+
+1. `swift run DoubleApp`. A menu bar icon appears; there is no Dock icon.
+2. Press Cmd+Shift+Space or click the icon. Answer five questions; they fill `~/Double/USER.md`.
+3. Paste a Gemini key from https://aistudio.google.com/apikey. It is stored in the macOS Keychain.
+4. Ask "who are you". Replies stream in the Jarvis voice.
+
+Edit anything in `~/Double` with a text editor; changes apply to the next message. Settings (right-click the icon) lets you pick a model or change the key.
+
+> **Under construction.** Phase 1 ships chat only. Commitments, scheduled check-ins and the body double session come next. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Build from source
 

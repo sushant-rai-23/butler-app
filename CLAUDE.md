@@ -34,13 +34,15 @@ Adding an edge to this graph is an architecture decision: record it in `decision
 
 ## Patterns
 
-**ModelProvider.** `DoubleCore` never names a vendor. It calls `provider.complete(messages:tools:)` and gets a `Message` back, which may carry `toolCalls`. A new provider is one file in `DoubleProviders` conforming to `ModelProvider`; it owns request shaping, streaming, and error mapping. API keys come from `KeychainStore` and are never logged, never placed in a URL, and never put into a `Message`.
+**ModelProvider.** Stream-first: `stream(_ request: ChatRequest) -> AsyncThrowingStream<StreamEvent, Error>` is the one method an adapter implements; `complete` is a default extension. `ChatRequest` carries `model`, `system`, `messages`, `tools`; the system prompt is never a message. `ToolCall.opaque` is provider-owned state (Gemini's thought signature) that Core stores and echoes back but never reads. `DoubleApp` builds providers only through `ProviderCatalog`, so no vendor type or name exists outside `DoubleProviders`; `BoundaryTests` enforces it. Every adapter passes the scenarios in `Tests/DoubleProvidersTests/Support/ProviderContract.swift` with its own fixtures through `FakeURLProtocol`, offline.
 
 **ToolRegistry.** Tools conform to `Tool` and declare a `RiskLevel`. The registry rejects duplicate names and filters by maximum risk. `DoubleCore` maps `Tool` to `ToolSpec` for the model and dispatches `ToolCall` by name. Adding a tool never touches the loop. Anything that acts inside the user's apps is `high` and is off the table.
 
 **KeychainStore.** Protocol with `get`, `set`, `delete`. Tests inject `InMemoryKeychainStore`. Unsigned `swift run` builds get a new code identity every build, so the real Security-framework store is not exercised in tests, ever.
 
 **Workspace markdown.** Templates in `Sources/DoubleCore/Templates/` are seeded create-only into the user's workspace. Every file has YAML frontmatter (`name`, `description`, `updated`, `aliases`). Lines starting with `_` are comments stripped before injection.
+
+**Panel focus.** The chat panel is a non-activating `NSPanel`; never call `NSApp.activate` for it. Its SwiftUI content is rebuilt on every open so `@FocusState` fires each time. `AppKitInputField` is the fallback behind the Settings toggle. Only the Settings window flips activation policy, and it restores `.accessory` on close.
 
 ## Rules
 
