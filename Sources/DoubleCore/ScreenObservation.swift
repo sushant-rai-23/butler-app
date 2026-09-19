@@ -5,7 +5,7 @@ import Foundation
 ///
 /// `DoubleApp` builds these from `DoubleWatch` output. Titles are untrusted
 /// text and are fenced before they reach a model.
-public struct Observation: Equatable, Sendable {
+public struct ScreenObservation: Equatable, Sendable {
     public var appName: String
     public var windowTitle: String
     public var at: Date

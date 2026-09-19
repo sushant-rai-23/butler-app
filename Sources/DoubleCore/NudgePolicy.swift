@@ -14,5 +14,5 @@ public enum NudgeDecision: Equatable, Sendable {
 /// no change for longer than the user's rhythm; a time-box ending is said once;
 /// a dismissed nudge is never repeated for the same commitment.
 public protocol NudgePolicy: Sendable {
-    func decide(commitment: Commitment?, recent: [Observation], now: Date) -> NudgeDecision
+    func decide(commitment: Commitment?, recent: [ScreenObservation], now: Date) -> NudgeDecision
 }

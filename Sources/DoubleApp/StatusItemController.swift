@@ -1,25 +1,28 @@
 import AppKit
 
-/// Owns the `NSStatusItem` and toggles the floating panel beneath it.
-///
-/// We own the status item directly instead of using SwiftUI's `MenuBarExtra`
-/// because `MenuBarExtra` cannot be opened or closed programmatically and its
-/// `.window` style is not a real floating panel. See decisions.md.
 @MainActor
-final class StatusItemController {
+final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
-    private let panel: FloatingPanel
+    var onToggle: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
     var state: MenuBarState = .default {
         didSet { applyState() }
     }
 
-    init(panel: FloatingPanel) {
-        self.panel = panel
+    override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        super.init()
         statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePanel)
+        statusItem.button?.action = #selector(clicked)
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         applyState()
+    }
+
+    /// Screen rectangle of the status item button, for positioning the panel.
+    var anchorRect: NSRect? {
+        guard let button = statusItem.button, let window = button.window else { return nil }
+        return window.convertToScreen(button.convert(button.bounds, to: nil))
     }
 
     private func applyState() {
@@ -28,27 +31,25 @@ final class StatusItemController {
         statusItem.button?.image = image
     }
 
-    @objc private func togglePanel() {
-        if panel.isVisible {
-            panel.close()
+    @objc private func clicked() {
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showMenu()
         } else {
-            positionPanelBelowStatusItem()
-            panel.makeKeyAndOrderFront(nil)
+            onToggle?()
         }
     }
 
-    /// Maccy's positioning: convert the button's bounds to screen coordinates,
-    /// hang the panel from its bottom-left, clamp to the screen's visible frame.
-    private func positionPanelBelowStatusItem() {
-        guard let button = statusItem.button, let buttonWindow = button.window else { return }
-        let buttonRect = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        let size = panel.frame.size
-        var origin = NSPoint(x: buttonRect.minX, y: buttonRect.minY - size.height)
-        if let screen = buttonWindow.screen ?? NSScreen.main {
-            let visible = screen.visibleFrame
-            origin.x = min(max(origin.x, visible.minX), visible.maxX - size.width)
-            origin.y = max(origin.y, visible.minY)
-        }
-        panel.setFrameOrigin(origin)
+    private func showMenu() {
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Double", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    @objc private func openSettings() {
+        onOpenSettings?()
     }
 }
