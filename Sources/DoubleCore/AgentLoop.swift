@@ -2,31 +2,22 @@ import DoubleProviders
 import DoubleTools
 import Foundation
 
-/// Everything the agent loop needs, injected by `DoubleApp` at launch.
-///
-/// `DoubleCore` reaches the model only through `ModelProvider` and tools only
-/// through `ToolRegistry`; it never names a vendor or a concrete tool.
-public struct AgentLoopDependencies {
-    public var provider: any ModelProvider
-    public var tools: ToolRegistry
-    public var workspace: any Workspace
-    /// Tools above this risk are never offered to the model.
-    public var maximumRisk: RiskLevel
-
-    public init(provider: any ModelProvider, tools: ToolRegistry, workspace: any Workspace, maximumRisk: RiskLevel = .medium) {
-        self.provider = provider
-        self.tools = tools
-        self.workspace = workspace
-        self.maximumRisk = maximumRisk
-    }
+public enum AgentLoopError: Error, Equatable {
+    case tooManyToolRounds(Int)
 }
 
-/// One conversation turn with the model.
+/// One conversation with the model.
 ///
-/// Builds context from the workspace (SOUL, USER, the commitment, today's
-/// notes), calls `ModelProvider.complete`, dispatches any `ToolCall` through
-/// the registry gated by `maximumRisk`, appends the results, and repeats
-/// until the model answers without tool calls. Returns the final text.
+/// Builds context from the workspace (SOUL and USER as the system prompt,
+/// plus this session's history), streams the reply, dispatches any
+/// `ToolCall` through the registry gated by `maximumRisk`, appends the
+/// results, and repeats until the model answers without tool calls.
+/// `DoubleCore` reaches the model only through `ModelProvider` and tools
+/// only through `ToolRegistry`; it never names a vendor or a concrete tool.
 public protocol AgentLoop: Sendable {
-    func run(input: String) async throws -> String
+    /// Runs one user turn. `onDelta` receives text as it streams; the return
+    /// value is the complete final answer.
+    func send(_ input: String, model: String, maximumRisk: RiskLevel, onDelta: @escaping @Sendable (String) -> Void) async throws -> String
+    /// Forgets this session's history. Workspace files are untouched.
+    func reset() async
 }
