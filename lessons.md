@@ -8,8 +8,8 @@ Corrections log. When the same correction happens twice, append one or two lines
 - What changed: one SwiftPM package, five targets plus five XCTest targets, repo docs, templates, CI, agents.
 - Why this approach: targets give enforceable boundaries with one manifest; NSStatusItem plus NSPanel because MenuBarExtra cannot be opened programmatically.
 - Trade-off accepted: a hidden, never-inserted MenuBarExtra exists only to satisfy SwiftUI's scene requirement; the real UI is AppKit.
-- Tricky part: ToolSpec lives in DoubleProviders and Tool in DoubleTools so neither leaf depends on the other; DoubleCore is the adapter between them.
-- Explain cold: why nothing may depend on DoubleApp, and why the model is never called from a bare timer.
+- Tricky part: ToolSpec lives in ButlerProviders and Tool in ButlerTools so neither leaf depends on the other; ButlerCore is the adapter between them.
+- Explain cold: why nothing may depend on ButlerApp, and why the model is never called from a bare timer.
 
 ## Teach-back: Phase 1 Gemini end to end (2026-09-20)
 - What changed: stream-first ModelProvider, Gemini adapter with offline contract tests, real Keychain, MarkdownWorkspace, DefaultAgentLoop, hotkey + chat panel, Settings, onboarding.

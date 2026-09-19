@@ -11,7 +11,7 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 ## 2026-09-19: One package, five targets, strict dependency direction
 - **Context:** Need boundaries that tests and reviewers can check.
 - **Options:** Five separate packages with path dependencies; one package with targets; one flat target.
-- **Why:** Targets give module boundaries and per-module tests with one manifest. DoubleApp depends on everything; nothing depends on it. DoubleCore depends on DoubleProviders and DoubleTools by protocol only. Providers, Tools, Watch are leaves.
+- **Why:** Targets give module boundaries and per-module tests with one manifest. ButlerApp depends on everything; nothing depends on it. ButlerCore depends on ButlerProviders and ButlerTools by protocol only. Providers, Tools, Watch are leaves.
 - **Revisit when:** A module is reused outside the app, or compile times demand splitting.
 
 ## 2026-09-19: Zero third-party dependencies in Phase 0
@@ -21,7 +21,7 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 - **Revisit when:** Phase adds auto-update or MCP.
 
 ## 2026-09-19: Status item is an NSStatusItem in the app delegate, not MenuBarExtra
-- **Context:** Clicking the icon must open a floating panel titled Double in one click.
+- **Context:** Clicking the icon must open a floating panel titled Butler in one click.
 - **Options:** SwiftUI `MenuBarExtra` `.window` style (its own popover, not a floating panel, auto-dismisses); `MenuBarExtra` `.menu` style with an "Open" item (two clicks, blocks run loop); `NSStatusItem` toggling a real `NSPanel`, with a hidden `MenuBarExtra(isInserted: false)` only to satisfy SwiftUI's scene requirement.
 - **Why:** `MenuBarExtra` cannot be opened or closed programmatically (Apple FB10185203). The NSStatusItem path is what Maccy ships, needs no dependency, and the same panel will host nudges later.
 - **Revisit when:** Apple adds programmatic control to MenuBarExtra.
@@ -53,7 +53,7 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 ## 2026-09-20: ModelProvider is stream-first with a ChatRequest, and ToolCall carries opaque provider state
 - **Context:** Phase 1 needs streamed replies, tool calls, and images. Gemini 3 returns a per-call id and a thought signature that must be echoed back verbatim or the next request fails with 400.
 - **Options:** Keep `complete()` and add streaming beside it; stream-first with `complete()` as a default extension; leak a Gemini-specific signature field into Core.
-- **Why:** `stream(_ request: ChatRequest) -> AsyncThrowingStream<StreamEvent, Error>` is the one method adapters implement; `complete` collects it. `ChatRequest` carries `model`, `system`, `messages`, `tools`, so the system prompt is not a message role (Gemini accepts only user and model roles) and switching model is just the next request. `ToolCall.opaque` is a string the provider writes and reads and Core only stores, so no vendor type leaves DoubleProviders. (A message-level opaque field was considered and dropped: Gemini's signature rides on the function-call part.) `Message.parts` replaces `content` so image parts exist for the Phase 3 watcher.
+- **Why:** `stream(_ request: ChatRequest) -> AsyncThrowingStream<StreamEvent, Error>` is the one method adapters implement; `complete` collects it. `ChatRequest` carries `model`, `system`, `messages`, `tools`, so the system prompt is not a message role (Gemini accepts only user and model roles) and switching model is just the next request. `ToolCall.opaque` is a string the provider writes and reads and Core only stores, so no vendor type leaves ButlerProviders. (A message-level opaque field was considered and dropped: Gemini's signature rides on the function-call part.) `Message.parts` replaces `content` so image parts exist for the Phase 3 watcher.
 - **Revisit when:** A provider needs structured opaque state that a string cannot hold; then make it `Data`.
 
 ## 2026-09-20: Default model is gemini-3.8-flash, chosen per request from Settings
@@ -80,28 +80,28 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 - **Why:** DispatchSource covers Phase 1 with no C callback plumbing. The parser handles `key: value` lines and an inline `[a, b]` list, preserves unknown keys as raw strings, and bumps `updated` on write.
 - **Revisit when:** Phase 2 reads projects/ and daily/; switch to FSEvents then.
 
-## 2026-09-20: Templates live in Sources/DoubleCore/Templates
+## 2026-09-20: Templates live in Sources/ButlerCore/Templates
 - **Context:** The app must find the seed templates at runtime from `swift run`. SwiftPM resources must sit inside the target folder; a symlink is copied into the resource bundle as a dangling link.
 - **Options:** Symlink from the target into a root `Templates/`; embed the files as Swift strings; move the folder into the target.
-- **Why:** Moving is the only option SwiftPM handles natively. `Bundle.module` serves them from `Double_DoubleCore.bundle` under `swift run` and inside a real bundle later.
+- **Why:** Moving is the only option SwiftPM handles natively. `Bundle.module` serves them from `Butler_ButlerCore.bundle` under `swift run` and inside a real bundle later.
 - **Revisit when:** Never, unless templates gain an editor outside the package.
 
-## 2026-09-20: Workspace root is ~/Double
+## 2026-09-20: Workspace root is ~/Butler
 - **Context:** Phase 1 needs a fixed home for SOUL, USER, HEARTBEAT, LESSONS and the four folders.
-- **Options:** `~/Double`; `~/Documents/Double`; `~/Library/Application Support/Double`; user-chosen at onboarding.
+- **Options:** `~/Butler`; `~/Documents/Butler`; `~/Library/Application Support/Butler`; user-chosen at onboarding.
 - **Why:** A visible home-folder directory matches "memory is markdown you can read, edit or delete". Application Support hides it; Documents raises iCloud sync questions. The root is injectable so tests use a temp dir.
 - **Revisit when:** Users ask to point it at a synced folder; add a Settings field, not an onboarding picker.
 
-## 2026-09-20: Non-secret settings in UserDefaults suite com.double.app; secrets in the Keychain under service com.double.app
+## 2026-09-20: Non-secret settings in UserDefaults suite com.butler.app; secrets in the Keychain under service com.butler.app
 - **Context:** A bare `swift run` binary has no bundle identifier, so `UserDefaults.standard` has no stable home.
-- **Options:** `UserDefaults.standard`; a named suite; a settings.json in ~/Double.
+- **Options:** `UserDefaults.standard`; a named suite; a settings.json in ~/Butler.
 - **Why:** The named suite works unsigned and in a bundle. Stored: providerID, chatModel, useAppKitInputField. Secrets go only to `SecurityKeychainStore` under account `<provider>.apiKey`.
-- **Revisit when:** Settings should travel with the workspace; then move them into ~/Double and keep the suite for machine-local toggles.
+- **Revisit when:** Settings should travel with the workspace; then move them into ~/Butler and keep the suite for machine-local toggles.
 
 ## 2026-09-20: ProviderCatalog is the only adapter factory, and every adapter passes ProviderContract
-- **Context:** DoubleApp must build a provider and show a picker without importing a vendor type.
-- **Options:** The app switches on a string and constructs adapters; adapters self-register into a mutable registry; a static catalog in DoubleProviders.
-- **Why:** The static catalog keeps every vendor name inside DoubleProviders, and `BoundaryTests` greps for leaks. `ProviderDescriptor` carries displayName, defaultModel, keychainKey and keyHelpURL. Every adapter passes the scenarios in `ProviderContract` with its own fixtures through `FakeURLProtocol`, offline.
+- **Context:** ButlerApp must build a provider and show a picker without importing a vendor type.
+- **Options:** The app switches on a string and constructs adapters; adapters self-register into a mutable registry; a static catalog in ButlerProviders.
+- **Why:** The static catalog keeps every vendor name inside ButlerProviders, and `BoundaryTests` greps for leaks. `ProviderDescriptor` carries displayName, defaultModel, keychainKey and keyHelpURL. Every adapter passes the scenarios in `ProviderContract` with its own fixtures through `FakeURLProtocol`, offline.
 - **Revisit when:** A provider needs runtime discovery (Ollama); add a `discover()` hook, not a mutable registry.
 
 ## 2026-09-20: AgentLoop is send(_:model:maximumRisk:onDelta:) with a round cap, rollback, and no empty turns

@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a change. Double is a body double with commitment context, not a pet or a general assistant.
+description: Propose a change. Butler is a body double with commitment context, not a pet or a general assistant.
 labels: [enhancement]
 body:
   - type: textarea
@@ -12,7 +12,7 @@ body:
     id: proposal
     attributes:
       label: Proposed behaviour
-      description: What should Double do, and when should it stay quiet?
+      description: What should Butler do, and when should it stay quiet?
     validations:
       required: true
   - type: textarea

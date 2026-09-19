@@ -1,33 +1,33 @@
 // swift-tools-version:5.10
 import PackageDescription
 
-// Dependency rule: DoubleApp depends on everything; nothing depends on DoubleApp.
-// DoubleCore depends on DoubleProviders and DoubleTools through protocols only.
-// DoubleProviders, DoubleTools and DoubleWatch are leaves.
+// Dependency rule: ButlerApp depends on everything; nothing depends on ButlerApp.
+// ButlerCore depends on ButlerProviders and ButlerTools through protocols only.
+// ButlerProviders, ButlerTools and ButlerWatch are leaves.
 let package = Package(
-    name: "Double",
+    name: "Butler",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "DoubleApp", targets: ["DoubleApp"]),
-        .library(name: "DoubleCore", targets: ["DoubleCore"]),
-        .library(name: "DoubleProviders", targets: ["DoubleProviders"]),
-        .library(name: "DoubleTools", targets: ["DoubleTools"]),
-        .library(name: "DoubleWatch", targets: ["DoubleWatch"]),
+        .executable(name: "ButlerApp", targets: ["ButlerApp"]),
+        .library(name: "ButlerCore", targets: ["ButlerCore"]),
+        .library(name: "ButlerProviders", targets: ["ButlerProviders"]),
+        .library(name: "ButlerTools", targets: ["ButlerTools"]),
+        .library(name: "ButlerWatch", targets: ["ButlerWatch"]),
     ],
     targets: [
         .executableTarget(
-            name: "DoubleApp",
-            dependencies: ["DoubleCore", "DoubleProviders", "DoubleTools", "DoubleWatch"]
+            name: "ButlerApp",
+            dependencies: ["ButlerCore", "ButlerProviders", "ButlerTools", "ButlerWatch"]
         ),
-        .target(name: "DoubleCore", dependencies: ["DoubleProviders", "DoubleTools"], resources: [.copy("Templates")]),
-        .target(name: "DoubleProviders"),
-        .target(name: "DoubleTools"),
-        .target(name: "DoubleWatch"),
+        .target(name: "ButlerCore", dependencies: ["ButlerProviders", "ButlerTools"], resources: [.copy("Templates")]),
+        .target(name: "ButlerProviders"),
+        .target(name: "ButlerTools"),
+        .target(name: "ButlerWatch"),
 
-        .testTarget(name: "DoubleAppTests", dependencies: ["DoubleApp", "DoubleCore", "DoubleProviders"]),
-        .testTarget(name: "DoubleCoreTests", dependencies: ["DoubleCore", "DoubleProviders", "DoubleTools"]),
-        .testTarget(name: "DoubleProvidersTests", dependencies: ["DoubleProviders"]),
-        .testTarget(name: "DoubleToolsTests", dependencies: ["DoubleTools"]),
-        .testTarget(name: "DoubleWatchTests", dependencies: ["DoubleWatch"]),
+        .testTarget(name: "ButlerAppTests", dependencies: ["ButlerApp", "ButlerCore", "ButlerProviders"]),
+        .testTarget(name: "ButlerCoreTests", dependencies: ["ButlerCore", "ButlerProviders", "ButlerTools"]),
+        .testTarget(name: "ButlerProvidersTests", dependencies: ["ButlerProviders"]),
+        .testTarget(name: "ButlerToolsTests", dependencies: ["ButlerTools"]),
+        .testTarget(name: "ButlerWatchTests", dependencies: ["ButlerWatch"]),
     ]
 )
