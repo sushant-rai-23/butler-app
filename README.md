@@ -9,7 +9,7 @@ Double is an open-source macOS body double for people with ADHD. You tell it wha
 3. Paste a Gemini key from https://aistudio.google.com/apikey. It is stored in the macOS Keychain.
 4. Ask "who are you". Replies stream in the Jarvis voice.
 
-Edit anything in `~/Double` with a text editor; changes apply to the next message. Settings (right-click the icon) lets you pick a model or change the key.
+Edit anything in `~/Double` with a text editor; changes apply to the next message. New to the code? Read [docs/CODEBASE-GUIDE.md](docs/CODEBASE-GUIDE.md). Settings (right-click the icon) lets you pick a model or change the key.
 
 > **Under construction.** Phase 1 ships chat only. Commitments, scheduled check-ins and the body double session come next. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
