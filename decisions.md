@@ -44,10 +44,10 @@ ADR-lite. Newest at the bottom. Format: date, decision, context, options, why, r
 - **Why:** Free AI Studio tier, no install step, deterministic first-run. Key goes in the `x-goog-api-key` header, never the URL.
 - **Revisit when:** A second provider ships and users ask for a picker at onboarding.
 
-## 2026-09-20: PRD stays local, forbidden-words rule is a note only
-- **Context:** docs/prd.md is an internal planning document that names the predecessor tools.
+## 2026-09-20: docs/ stays local and out of the repo
+- **Context:** docs/prd.md is an internal planning document that names the tools this project replaces.
 - **Options:** Commit it and exclude it from checks; commit and edit it; keep it out of git.
-- **Why:** It is not part of the open-source release. It is in .gitignore. The CI grep for the forbidden words was removed as overkill for a fresh project; CLAUDE.md keeps one line.
+- **Why:** It is not part of the open-source release. The whole `docs/` folder is gitignored: it holds the PRD, the phase plans, the reference notes and the codebase guide, all of which are working material rather than shipped documentation. The naming rule was dropped entirely, because stating it in a public file published the very names it was meant to keep out.
 - **Revisit when:** A public roadmap document is wanted; write a new one rather than publishing the PRD.
 
 ## 2026-09-20: ModelProvider is stream-first with a ChatRequest, and ToolCall carries opaque provider state

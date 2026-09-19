@@ -69,7 +69,7 @@ Imperative subject, 72 chars max, area prefix: `core:`, `providers:`, `tools:`, 
 
 ## When stuck, look at
 
-Details and links in [docs/REFERENCES.md](docs/REFERENCES.md).
+Details and links are in `docs/REFERENCES.md`, kept locally and not committed.
 
 - Packaging, Sparkle, Gemini request shape, screen capture parameters: buddy-app.
 - Memory files, frontmatter, heartbeat guardrails, tool risk gating, secret hygiene: vellum-assistant.

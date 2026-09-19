@@ -17,7 +17,7 @@ No Xcode project is committed. Open the folder in Xcode with `xed .` if you want
 ## Ground rules
 
 - **Swift only.** No Python, no Node, no external service. Zero third-party dependencies until the roadmap says otherwise.
-- **Package boundaries are enforced.** `DoubleApp` depends on everything; nothing depends on `DoubleApp`. `DoubleCore` reaches models and tools only through the `ModelProvider` and `ToolRegistry` protocols. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Package boundaries are enforced.** `DoubleApp` depends on everything; nothing depends on `DoubleApp`. `DoubleCore` reaches models and tools only through the `ModelProvider` and `ToolRegistry` protocols. See the package boundaries section in CLAUDE.md.
 - **Tests first.** Every behaviour change comes with a failing test that the change makes pass. Each module has its own XCTest target.
 - **Privacy is a feature.** Screen content never touches disk, API keys never enter model context or logs, and the model is never called on a bare timer.
 - **Not a pet, not a general assistant.** If a change makes Double chattier without a commitment-related reason, it is out of scope.
