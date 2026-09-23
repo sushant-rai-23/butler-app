@@ -7,6 +7,9 @@ struct StubWorkspace: Workspace {
     var rootURL = URL(fileURLWithPath: "/tmp/stub")
     func read(_ relativePath: String) throws -> String { "" }
     func write(_ contents: String, to relativePath: String) throws {}
+    func document(_ relativePath: String) throws -> MarkdownDocument { MarkdownDocument(frontmatter: nil, body: "") }
+    func index() throws -> [MemoryEntry] { [] }
+    func append(_ text: String, to relativePath: String, description: String?) throws {}
     func systemPrompt() throws -> String { "SYSTEM" }
 }
 
@@ -134,5 +137,90 @@ extension DefaultAgentLoopTests {
         }
         let history = await loop.history
         XCTAssertEqual(history, [])
+    }
+}
+
+/// The Phase 2a seam, end to end: the model asks, the registry dispatches, the
+/// real workspace writes, and the result comes back — against disk, not a stub.
+extension DefaultAgentLoopTests {
+    private func makeWorkspace() throws -> MarkdownWorkspace {
+        let root = URL.temporaryDirectory.appending(path: "butler-loop-\(UUID().uuidString)")
+        let workspace = MarkdownWorkspace(rootURL: root)
+        try workspace.seed(from: XCTUnwrap(MarkdownWorkspace.bundledTemplates))
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        return workspace
+    }
+
+    private var writeAditya: ToolCall {
+        ToolCall(
+            id: "c1",
+            name: "memory.write",
+            arguments: #"{"path":"people/aditya.md","text":"Runs the backend.","description":"Backend lead."}"#,
+            opaque: "sig"
+        )
+    }
+
+    func testMemoryWriteToolCallLandsOnDiskAndComesBackToTheModel() async throws {
+        let workspace = try makeWorkspace()
+        let registry = ToolRegistry()
+        try registry.register(MemoryWriteTool(workspace: workspace))
+        let provider = ScriptedProvider([
+            [.toolCall(writeAditya), .finished(.stop)],
+            [.textDelta("Noted, sir."), .finished(.stop)],
+            [.textDelta("He runs the backend, sir."), .finished(.stop)],
+        ])
+        let loop = DefaultAgentLoop(provider: provider, tools: registry, workspace: workspace)
+
+        let result = try await loop.send("remember that Aditya runs the backend", model: "m", maximumRisk: .medium) { _ in }
+
+        XCTAssertEqual(result, "Noted, sir.")
+        XCTAssertEqual(provider.requests[0].tools.map(\.name), ["memory.write"], "medium risk is within the cap")
+        XCTAssertTrue(try workspace.read("people/aditya.md").contains("Runs the backend."))
+        let second = provider.requests[1]
+        XCTAssertTrue(second.messages.contains { $0.text.contains("Created people/aditya.md") })
+        // The prompt is built once per turn, not once per tool round, so the new
+        // file reaches the index on the next turn rather than mid-turn.
+        XCTAssertEqual(second.system, provider.requests[0].system)
+
+        _ = try await loop.send("what do you know about Aditya?", model: "m", maximumRisk: .medium) { _ in }
+
+        let system = try XCTUnwrap(provider.requests[2].system)
+        XCTAssertTrue(system.contains("# Memory index"), system)
+        XCTAssertTrue(system.contains("people/aditya.md — Backend lead."), "the file written last turn is in the prompt, with no restart")
+    }
+
+    /// A model that invents a tool name, or names one it was not offered, must
+    /// get a plain error back and keep going — the turn is not the place to fail.
+    func testUnknownToolNameIsReportedToTheModelAndTheTurnContinues() async throws {
+        let call = ToolCall(id: "c1", name: "memory.write", arguments: "{}")
+        let provider = ScriptedProvider([[.toolCall(call), .finished(.stop)], [.textDelta("Sorry, sir."), .finished(.stop)]])
+        let loop = try makeLoop(provider)
+
+        let result = try await loop.send("go", model: "m", maximumRisk: .medium) { _ in }
+
+        XCTAssertEqual(result, "Sorry, sir.")
+        XCTAssertEqual(provider.requests[1].messages[2].text, "error: unknown tool memory.write")
+    }
+
+    /// Rollback is history-only by design: a file the tool already wrote stays
+    /// written. The user's message goes back to them to send again, and the
+    /// model sees the file in the index next turn rather than writing it twice.
+    func testFailureAfterAWriteRollsBackHistoryButNotTheFile() async throws {
+        let workspace = try makeWorkspace()
+        let registry = ToolRegistry()
+        try registry.register(MemoryWriteTool(workspace: workspace))
+        let provider = ScriptedProvider([[.toolCall(writeAditya), .finished(.stop)], [.finished(.contentFiltered)]])
+        let loop = DefaultAgentLoop(provider: provider, tools: registry, workspace: workspace)
+
+        do {
+            _ = try await loop.send("remember that Aditya runs the backend", model: "m", maximumRisk: .medium) { _ in }
+            XCTFail("expected throw")
+        } catch let error as AgentLoopError {
+            XCTAssertEqual(error, .emptyReply(.contentFiltered))
+        }
+
+        let history = await loop.history
+        XCTAssertEqual(history, [], "no half turn is left for the next request to carry")
+        XCTAssertTrue(try workspace.read("people/aditya.md").contains("Runs the backend."))
     }
 }

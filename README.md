@@ -11,7 +11,7 @@ Butler is an open-source macOS body double for people with ADHD. You tell it wha
 
 Edit anything in `~/Butler` with a text editor; changes apply to the next message. Settings (right-click the icon) lets you pick a model or change the key.
 
-> **Under construction.** Phase 1 ships chat only. Commitments, scheduled check-ins and the body double session come next.
+> **Under construction.** Butler chats and remembers: tell it something worth keeping and it files the fact in `~/Butler`, then reads it back in later conversations. Commitments, scheduled check-ins and the body double session come next.
 
 ## Build from source
 

@@ -1,21 +1,55 @@
 import Foundation
 
-/// The YAML block at the top of every workspace file. Only the subset Butler
-/// writes: `key: value` lines and an inline `[a, b]` list for aliases.
-/// Unknown keys are kept verbatim in `extra` so user additions survive.
+/// The YAML block at the top of every workspace file.
+///
+/// Butler parses only the four keys it uses and keeps the block's exact text
+/// in `rawBlock`. Writing patches the `updated:` line in place and leaves
+/// every other line byte-identical, so a user's hand-added keys, comments and
+/// multi-line values survive a write by Butler.
 public struct Frontmatter: Equatable, Sendable {
-    public var name: String
-    public var description: String
+    /// Read-only: `render()` writes `rawBlock`, so assigning to these would
+    /// not reach the file. Renaming a file or editing its aliases has to
+    /// rewrite `rawBlock` instead.
+    public let name: String
+    public let description: String
+    /// The one field `render()` patches into the block.
     public var updated: String
-    public var aliases: [String]
-    public var extra: [String: String]
+    public let aliases: [String]
+    /// The exact lines between the `---` fences, as parsed.
+    public var rawBlock: String
 
-    public init(name: String, description: String, updated: String, aliases: [String], extra: [String: String] = [:]) {
+    public init(name: String, description: String, updated: String, aliases: [String], rawBlock: String) {
         self.name = name
         self.description = description
         self.updated = updated
         self.aliases = aliases
-        self.extra = extra
+        self.rawBlock = rawBlock
+    }
+
+    /// A block Butler authors itself, for a file it is creating. `name` and
+    /// `description` may come from the model, and `rawBlock` is rendered
+    /// verbatim, so a newline in either would split the block or close it
+    /// early. Both are flattened to one line first.
+    public static func new(name: String, description: String, updated: String) -> Frontmatter {
+        let name = singleLine(name)
+        let description = singleLine(description)
+        return Frontmatter(
+            name: name,
+            description: description,
+            updated: updated,
+            aliases: [],
+            rawBlock: "name: \(name)\ndescription: \(description)\nupdated: \(updated)\naliases: []"
+        )
+    }
+
+    /// Folds every line break into a single space and trims, so a value can
+    /// neither become a line of its own nor come back from a reparse changed.
+    static func singleLine(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .trimmingCharacters(in: .whitespaces)
     }
 }
 
@@ -33,32 +67,45 @@ public struct MarkdownDocument: Equatable, Sendable {
         guard lines.first == "---", let end = lines.dropFirst().firstIndex(of: "---") else {
             return MarkdownDocument(frontmatter: nil, body: text.trimmingTrailingNewlines())
         }
+        let blockLines = Array(lines[1..<end])
         var fields: [String: String] = [:]
-        for line in lines[1..<end] {
-            guard let colon = line.firstIndex(of: ":") else { continue }
-            let key = line[..<colon].trimmingCharacters(in: .whitespaces)
+        for line in blockLines {
+            guard let key = Self.key(of: line), let colon = line.firstIndex(of: ":") else { continue }
             let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
-            fields[key] = value
+            if fields[key] == nil { fields[key] = value }
         }
-        let known = ["name", "description", "updated", "aliases"]
         let frontmatter = Frontmatter(
             name: fields["name"] ?? "",
             description: fields["description"] ?? "",
             updated: fields["updated"] ?? "",
             aliases: parseList(fields["aliases"] ?? "[]"),
-            extra: fields.filter { !known.contains($0.key) }
+            rawBlock: blockLines.joined(separator: "\n")
         )
         let body = lines[(end + 1)...].joined(separator: "\n").trimmingTrailingNewlines()
         return MarkdownDocument(frontmatter: frontmatter, body: body)
     }
 
+    /// Writes the raw block back verbatim, with `updated:` patched to the
+    /// current value, folded to one line. A block with no `updated:` line gains one at the end.
     public func render() -> String {
         guard let fm = frontmatter else { return body }
-        var lines = ["---", "name: \(fm.name)", "description: \(fm.description)", "updated: \(fm.updated)", "aliases: [\(fm.aliases.joined(separator: ", "))]"]
-        for key in fm.extra.keys.sorted() { lines.append("\(key): \(fm.extra[key]!)") }
-        lines.append("---")
-        lines.append(body)
-        return lines.joined(separator: "\n")
+        let updated = Frontmatter.singleLine(fm.updated)
+        var blockLines = fm.rawBlock.components(separatedBy: "\n")
+        if let i = blockLines.firstIndex(where: { Self.key(of: $0) == "updated" }) {
+            blockLines[i] = "updated: \(updated)"
+        } else if !updated.isEmpty {
+            blockLines.append("updated: \(updated)")
+        }
+        return (["---"] + blockLines + ["---", body]).joined(separator: "\n")
+    }
+
+    /// The top-level key a block line declares, or nil if it declares none:
+    /// indented lines belong to the key above, `#` lines are comments. Parsing
+    /// and rendering both go through this, so they never disagree about which
+    /// line holds a key.
+    private static func key(of line: String) -> String? {
+        guard line.first?.isWhitespace != true, !line.hasPrefix("#"), let colon = line.firstIndex(of: ":") else { return nil }
+        return line[..<colon].trimmingCharacters(in: .whitespaces)
     }
 
     private static func parseList(_ raw: String) -> [String] {

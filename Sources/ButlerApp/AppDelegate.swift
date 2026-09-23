@@ -15,6 +15,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKey: HotKey?
     private var model: AppModel?
 
+    /// The tools chat may call. Registration throws only on a duplicate name,
+    /// which is a programming error here, so launch falls back to no tools
+    /// rather than taking the app down.
+    static func makeToolRegistry(workspace: any Workspace) throws -> ToolRegistry {
+        let registry = ToolRegistry()
+        try registry.register(MemoryReadTool(workspace: workspace))
+        try registry.register(MemoryWriteTool(workspace: workspace))
+        return registry
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
@@ -23,7 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let workspace = MarkdownWorkspace()
         let provider = ProviderCatalog.makeProvider(id: settings.providerID, keychain: keychain)
             ?? ProviderCatalog.makeProvider(id: ProviderCatalog.defaultProvider.id, keychain: keychain)!
-        let loop = DefaultAgentLoop(provider: provider, tools: ToolRegistry(), workspace: workspace)
+        let tools = (try? Self.makeToolRegistry(workspace: workspace)) ?? ToolRegistry()
+        let loop = DefaultAgentLoop(provider: provider, tools: tools, workspace: workspace)
         let session = ChatSession(loop: loop, settings: settings)
         let model = AppModel(settings: settings, keychain: keychain, workspace: workspace, session: session)
         self.model = model

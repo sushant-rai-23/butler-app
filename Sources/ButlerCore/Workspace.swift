@@ -13,6 +13,16 @@ public protocol Workspace: Sendable {
     func read(_ relativePath: String) throws -> String
     func write(_ contents: String, to relativePath: String) throws
 
-    /// SOUL.md then USER.md, frontmatter removed, comment lines stripped.
+    /// The file parsed into frontmatter and body.
+    func document(_ relativePath: String) throws -> MarkdownDocument
+
+    /// One entry per markdown file in the seeded folders, for the prompt index.
+    func index() throws -> [MemoryEntry]
+
+    /// Appends one dated bullet, creating the file (and requiring a description) if needed.
+    func append(_ text: String, to relativePath: String, description: String?) throws
+
+    /// SOUL, USER, LESSONS, today's note and the memory index, in that order,
+    /// frontmatter removed and comment lines stripped. Absent parts are omitted.
     func systemPrompt() throws -> String
 }

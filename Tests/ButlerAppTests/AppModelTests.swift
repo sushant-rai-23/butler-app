@@ -47,6 +47,14 @@ final class AppModelTests: XCTestCase {
         model.workspace.stopWatching()
     }
 
+    func testMemoryRegistryHoldsExactlyTheTwoMemoryTools() throws {
+        let workspace = MarkdownWorkspace(rootURL: root)
+        let registry = try AppDelegate.makeToolRegistry(workspace: workspace)
+        XCTAssertEqual(registry.all.map(\.name), ["memory.read", "memory.write"])
+        XCTAssertEqual(registry.tools(atMost: .low).map(\.name), ["memory.read"])
+        XCTAssertEqual(registry.tools(atMost: .medium).map(\.name), ["memory.read", "memory.write"])
+    }
+
     func testExistingWorkspaceWithKeyOpensChat() throws {
         let workspace = MarkdownWorkspace(rootURL: root)
         try workspace.seed(from: XCTUnwrap(MarkdownWorkspace.bundledTemplates))
